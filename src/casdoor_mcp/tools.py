@@ -88,9 +88,12 @@ casdoor_delete = Group(
 
 @_op(ROOT)
 def casdoor_version():
-    """Get the Casdoor MCP server version."""
+    """Get the Casdoor server health and MCP package version."""
     from importlib.metadata import version
-    return version("casdoor-mcp")
+    return {
+        "mcp": version("casdoor-mcp"),
+        "service": _get_client().get("/api/health"),
+    }
 
 
 # -- casdoor_read -------------------------------------------------------------
