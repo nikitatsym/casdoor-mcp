@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>casdoor-mcp — Configuration</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --green: #3fb950;
+    --input-bg: #0d1117;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+  label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  .radio-group { margin-bottom: 1rem; }
+  .radio-group label { display: inline-block; margin-right: 1.5rem; color: var(--text); cursor: pointer; }
+  .radio-group input[type="radio"] { margin-right: 0.35rem; }
+  .auth-fields { display: none; }
+  .auth-fields.active { display: block; }
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-copy { background: var(--surface); color: var(--text); border: 1px solid var(--border); margin-left: 0.5rem; display: none; }
+  .btn-copy:hover { border-color: var(--accent); }
+  .btn-copy.copied { border-color: var(--green); color: var(--green); }
+  pre {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-top: 1rem;
+    display: none;
+  }
+  .template pre { display: block; color: var(--text-muted); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>casdoor-mcp</h1>
+  <p class="subtitle">MCP server for <a href="https://casdoor.org/">Casdoor</a> IAM/SSO — 3 meta-tools covering users, organizations, applications, roles, permissions, and more</p>
+
+  <div class="card template">
+    <h2>Config template</h2>
+    <pre id="template-pre"><code id="template-code"></code></pre>
+  </div>
+
+  <div class="card">
+    <h2>Generate your config</h2>
+
+    <label for="casdoor-url">Casdoor URL</label>
+    <input type="text" id="casdoor-url" placeholder="https://auth.example.com">
+
+    <label>Authentication method</label>
+    <div class="radio-group">
+      <label><input type="radio" name="auth" value="client" checked onchange="switchAuth()"> Client ID + Secret</label>
+      <label><input type="radio" name="auth" value="token" onchange="switchAuth()"> Access Token</label>
+      <label><input type="radio" name="auth" value="key" onchange="switchAuth()"> Access Key + Secret</label>
+    </div>
+
+    <div id="auth-client" class="auth-fields active">
+      <label for="client-id">Client ID</label>
+      <input type="text" id="client-id" placeholder="your-client-id">
+      <label for="client-secret">Client Secret</label>
+      <input type="password" id="client-secret" placeholder="your-client-secret">
+    </div>
+
+    <div id="auth-token" class="auth-fields">
+      <label for="access-token">Access Token</label>
+      <input type="password" id="access-token" placeholder="your-access-token">
+    </div>
+
+    <div id="auth-key" class="auth-fields">
+      <label for="access-key">Access Key</label>
+      <input type="text" id="access-key" placeholder="your-access-key">
+      <label for="access-secret">Access Secret</label>
+      <input type="password" id="access-secret" placeholder="your-access-secret">
+    </div>
+
+    <button class="btn-primary" onclick="generate()">Generate</button>
+    <button class="btn-copy" id="btn-copy" onclick="copyConfig()">Copy</button>
+    <pre id="output"></pre>
+  </div>
+
+  <div class="card">
+    <h2>Getting credentials</h2>
+    <ol style="padding-left:1.25rem; color: var(--text-muted);">
+      <li><strong>Client ID + Secret (recommended):</strong> Casdoor UI &rarr; Applications &rarr; select app &rarr; edit page. Copy Client ID and Client Secret.</li>
+      <li><strong>Access Token:</strong> OAuth flow or Client Credentials Grant (<code>POST /api/login/oauth/access_token</code>).</li>
+      <li><strong>Access Key + Secret:</strong> User account settings or <code>update-user</code> API (per-user credentials).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Where to put the config</h2>
+    <ul style="padding-left:1.25rem; color: var(--text-muted);">
+      <li><strong>Claude Desktop:</strong> <code>~/.config/claude/claude_desktop_config.json</code></li>
+      <li><strong>Claude Code:</strong> <code>~/.claude/settings.json</code> (mcpServers section)</li>
+    </ul>
+  </div>
+
+  <p class="footer">
+    <a href="https://github.com/nikitatsym/casdoor-mcp">GitHub</a> &middot;
+    <a href="https://casdoor.org/">Casdoor</a> &middot;
+    MIT License
+  </p>
+
+</div>
+
+<script>
+var INDEX_URL = "https://nikitatsym.github.io/casdoor-mcp/simple";
+
+function updateTemplate() {
+  var tpl = {
+    mcpServers: {
+      casdoor: {
+        command: "uvx",
+        args: ["--refresh", "--extra-index-url", INDEX_URL, "casdoor-mcp"],
+        env: {
+          "CASDOOR_ENDPOINT": "https://auth.example.com",
+          "CASDOOR_CLIENT_ID": "your-client-id",
+          "CASDOOR_CLIENT_SECRET": "your-client-secret"
+        }
+      }
+    }
+  };
+  document.getElementById('template-code').textContent = JSON.stringify(tpl, null, 2);
+}
+
+document.addEventListener('DOMContentLoaded', updateTemplate);
+
+function switchAuth() {
+  var selected = document.querySelector('input[name="auth"]:checked').value;
+  document.querySelectorAll('.auth-fields').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('auth-' + selected).classList.add('active');
+}
+
+function generate() {
+  var url = document.getElementById('casdoor-url').value.trim().replace(/\/+$/, '');
+  if (!url) { alert('Please enter your Casdoor URL.'); return; }
+
+  var selected = document.querySelector('input[name="auth"]:checked').value;
+  var env = { CASDOOR_ENDPOINT: url };
+
+  if (selected === 'client') {
+    var cid = document.getElementById('client-id').value.trim();
+    var csecret = document.getElementById('client-secret').value.trim();
+    if (!cid || !csecret) { alert('Please enter Client ID and Client Secret.'); return; }
+    env.CASDOOR_CLIENT_ID = cid;
+    env.CASDOOR_CLIENT_SECRET = csecret;
+  } else if (selected === 'token') {
+    var token = document.getElementById('access-token').value.trim();
+    if (!token) { alert('Please enter your Access Token.'); return; }
+    env.CASDOOR_ACCESS_TOKEN = token;
+  } else {
+    var akey = document.getElementById('access-key').value.trim();
+    var asecret = document.getElementById('access-secret').value.trim();
+    if (!akey || !asecret) { alert('Please enter Access Key and Access Secret.'); return; }
+    env.CASDOOR_ACCESS_KEY = akey;
+    env.CASDOOR_ACCESS_SECRET = asecret;
+  }
+
+  var config = {
+    mcpServers: {
+      casdoor: {
+        command: "uvx",
+        args: ["--refresh", "--extra-index-url", INDEX_URL, "casdoor-mcp"],
+        env: env
+      }
+    }
+  };
+
+  var output = document.getElementById('output');
+  var btnCopy = document.getElementById('btn-copy');
+  output.textContent = JSON.stringify(config, null, 2);
+  output.style.display = 'block';
+  btnCopy.style.display = 'inline-block';
+}
+
+function copyConfig() {
+  var text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById('btn-copy');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
