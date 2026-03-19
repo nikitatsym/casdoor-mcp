@@ -4,12 +4,6 @@ MCP server for Casdoor IAM/SSO platform.
 
 ## Install
 
-```
-uvx --extra-index-url https://nikitatsym.github.io/casdoor-mcp/simple casdoor-mcp
-```
-
-## Configure
-
 Three authentication methods are supported. Priority: access_token > client_id+secret > access_key+secret.
 
 ### Method 1: Client ID + Secret (recommended)
