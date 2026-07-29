@@ -3,12 +3,12 @@
 import inspect
 import typing
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from . import tools as _tools_module
 from .registry import ROOT
 
-mcp = FastMCP("casdoor")
+mcp = MCPServer("casdoor")
 
 
 # -- Helpers ------------------------------------------------------------------
