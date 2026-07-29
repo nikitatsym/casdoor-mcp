@@ -1,13 +1,13 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from casdoor_mcp.config import _reset_settings
 from casdoor_mcp.tools import (
+    _SLIM_APPLICATION_FIELDS,
+    _SLIM_ORGANIZATION_FIELDS,
+    _SLIM_USER_FIELDS,
     _data,
     _slim,
     _slim_list,
-    _SLIM_USER_FIELDS,
-    _SLIM_ORGANIZATION_FIELDS,
-    _SLIM_APPLICATION_FIELDS,
 )
 
 
@@ -57,7 +57,7 @@ def test_auth_priority_token(monkeypatch):
 
     with patch("casdoor_mcp.client.httpx.Client") as mock_client:
         from casdoor_mcp.client import CasdoorClient
-        c = CasdoorClient()
+        CasdoorClient()
         call_kwargs = mock_client.call_args
         assert call_kwargs.kwargs["headers"]["Authorization"] == "Bearer mytoken"
         assert call_kwargs.kwargs["params"] == {}
@@ -72,7 +72,7 @@ def test_auth_priority_client_id(monkeypatch):
 
     with patch("casdoor_mcp.client.httpx.Client") as mock_client:
         from casdoor_mcp.client import CasdoorClient
-        c = CasdoorClient()
+        CasdoorClient()
         call_kwargs = mock_client.call_args
         assert call_kwargs.kwargs["params"] == {"clientId": "cid", "clientSecret": "csecret"}
         assert "Authorization" not in call_kwargs.kwargs["headers"]
@@ -87,7 +87,7 @@ def test_auth_priority_access_key(monkeypatch):
 
     with patch("casdoor_mcp.client.httpx.Client") as mock_client:
         from casdoor_mcp.client import CasdoorClient
-        c = CasdoorClient()
+        CasdoorClient()
         call_kwargs = mock_client.call_args
         assert call_kwargs.kwargs["params"] == {"accessKey": "akey", "accessSecret": "asecret"}
         assert "Authorization" not in call_kwargs.kwargs["headers"]

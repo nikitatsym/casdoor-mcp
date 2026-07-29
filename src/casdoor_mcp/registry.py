@@ -1,7 +1,7 @@
 class Group:
     """A named group of MCP tool operations exposed as a single meta-tool."""
 
-    __slots__ = ("name", "doc")
+    __slots__ = ("doc", "name")
 
     def __init__(self, name: str, doc: str):
         self.name = name

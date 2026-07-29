@@ -51,7 +51,8 @@ class CasdoorClient:
         if r.status_code >= 400:
             try:
                 body = r.json()
-            except Exception:
+            except ValueError:
+                # JSONDecodeError and non-UTF8 UnicodeDecodeError are both ValueError
                 body = r.text
             raise APIError(r.status_code, r.request.method, str(r.url), body)
         if r.status_code == 204 or not r.content:
