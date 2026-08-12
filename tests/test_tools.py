@@ -1,4 +1,7 @@
+import inspect
 from unittest.mock import patch
+
+import pytest
 
 from casdoor_mcp.config import _reset_settings
 from casdoor_mcp.tools import (
@@ -100,3 +103,35 @@ def test_dispatch_help():
     help_text = _build_help("casdoor_read")
     assert "ListUsers" in help_text
     assert "ListOrganizations" in help_text
+
+
+def test_group_doc_examples_name_registered_operations():
+    from casdoor_mcp import server, tools
+    from casdoor_mcp.registry import Group
+
+    groups = [
+        obj
+        for _, obj in inspect.getmembers(tools, lambda o: isinstance(o, Group))
+        if obj.name in server._group_ops
+    ]
+    assert len(groups) == len(server._group_ops)
+    for group in groups:
+        for name in server._EXAMPLE_OPERATION.findall(group.doc):
+            if name == "help":
+                continue
+            assert name in server._group_ops[group.name], (
+                f"{group.name} example names {name!r}, which it does not expose"
+            )
+
+
+def test_doc_example_validation_rejects_unknown_operation():
+    from casdoor_mcp import server
+
+    with pytest.raises(RuntimeError, match="NoSuchOp"):
+        server._validate_doc_examples(
+            "casdoor_read",
+            'Example: casdoor_read(operation="NoSuchOp")',
+            {"ListUsers": None},
+        )
+
+    server._validate_doc_examples("casdoor_read", 'operation="help"', {})
