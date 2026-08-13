@@ -50,19 +50,19 @@ Format: `function_name(params)` → `HTTP_METHOD /path` — description.
 | Operation | Endpoint | Notes |
 |---|---|---|
 | `create_user(user)` | `POST /api/add-user` | body = user object |
-| `update_user(user)` | `POST /api/update-user` | body = user object |
+| `update_user(owner, name, **kwargs)` | `GET /api/get-user?id=owner/name` then `POST /api/update-user?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_organization(org)` | `POST /api/add-organization` | body = org object |
-| `update_organization(org)` | `POST /api/update-organization` | |
+| `update_organization(owner, name, **kwargs)` | `GET /api/get-organization?id=owner/name` then `POST /api/update-organization?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_application(app)` | `POST /api/add-application` | |
-| `update_application(app)` | `POST /api/update-application` | |
+| `update_application(owner, name, **kwargs)` | `GET /api/get-application?id=owner/name` then `POST /api/update-application?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_provider(provider)` | `POST /api/add-provider` | |
-| `update_provider(provider)` | `POST /api/update-provider` | |
+| `update_provider(owner, name, **kwargs)` | `GET /api/get-provider?id=owner/name` then `POST /api/update-provider?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_role(role)` | `POST /api/add-role` | |
-| `update_role(role)` | `POST /api/update-role` | |
+| `update_role(owner, name, **kwargs)` | `GET /api/get-role?id=owner/name` then `POST /api/update-role?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_permission(perm)` | `POST /api/add-permission` | |
-| `update_permission(perm)` | `POST /api/update-permission` | |
+| `update_permission(owner, name, **kwargs)` | `GET /api/get-permission?id=owner/name` then `POST /api/update-permission?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 | `create_group(group)` | `POST /api/add-group` | |
-| `update_group(group)` | `POST /api/update-group` | |
+| `update_group(owner, name, **kwargs)` | `GET /api/get-group?id=owner/name` then `POST /api/update-group?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 
 ### casdoor_delete
 
@@ -74,8 +74,8 @@ Format: `function_name(params)` → `HTTP_METHOD /path` — description.
 | `delete_provider(provider)` | `POST /api/delete-provider` | |
 | `delete_role(role)` | `POST /api/delete-role` | |
 | `delete_permission(perm)` | `POST /api/delete-permission` | |
-| `delete_token(token)` | `POST /api/delete-token` | |
-| `delete_session(session)` | `POST /api/delete-session` | |
+| `delete_token(owner, name, organization)` | `POST /api/delete-token` | body = owner + name + organization; Casdoor filters the delete by organization |
+| `delete_session(owner, name, application)` | `POST /api/delete-session` | body = owner + name + application; Casdoor keys sessions by all three |
 | `delete_group(group)` | `POST /api/delete-group` | |
 
 ## Slim fields

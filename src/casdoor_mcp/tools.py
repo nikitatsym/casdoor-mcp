@@ -1,4 +1,4 @@
-from .client import CasdoorClient
+from .client import APIError, CasdoorClient
 from .registry import ROOT, Group, _op
 
 # -- Client singleton ---------------------------------------------------------
@@ -41,6 +41,20 @@ _SLIM_APPLICATION_FIELDS = {
     "owner", "name", "displayName", "organization",
     "enablePassword", "enableSignUp", "createdTime",
 }
+
+
+def _merged(current, changes: dict, target: dict) -> dict:
+    """Lay the caller's changes over the object Casdoor currently holds.
+
+    Casdoor's update handlers rewrite every column, so a sparse body blanks each
+    field the caller did not name; these endpoints are only safe as
+    read-modify-write, which is what Casdoor's own UI does. Secrets masked as
+    "***" on read are restored by the update handler, except the nested
+    managedAccounts/mfaAccounts secrets, which upstream rewrites as masked.
+    """
+    if not isinstance(current, dict) or not current:
+        raise APIError(404, "GET", f"id={target['id']}", "no such object to update")
+    return {**current, **changes}
 
 
 def _slim(item: dict, fields: set) -> dict:
@@ -236,11 +250,15 @@ def create_user(owner: str, name: str, displayName: str = "", **kwargs):
     return _ok(_get_client().post("/api/add-user", json=body))
 
 
+# Casdoor rewrites every column on update, so these read the current object
+# first and lay the caller's changes over it; `id` selects the row.
 @_op(casdoor_write)
 def update_user(owner: str, name: str, **kwargs):
     """Update a user. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-user", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-user", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-user", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -253,8 +271,10 @@ def create_organization(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_organization(owner: str, name: str, **kwargs):
     """Update an organization. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-organization", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-organization", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-organization", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -267,8 +287,10 @@ def create_application(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_application(owner: str, name: str, **kwargs):
     """Update an application. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-application", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-application", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-application", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -281,8 +303,10 @@ def create_provider(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_provider(owner: str, name: str, **kwargs):
     """Update a provider. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-provider", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-provider", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-provider", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -295,8 +319,10 @@ def create_role(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_role(owner: str, name: str, **kwargs):
     """Update a role. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-role", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-role", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-role", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -309,8 +335,10 @@ def create_permission(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_permission(owner: str, name: str, **kwargs):
     """Update a permission. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-permission", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-permission", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-permission", params=target, json=body))
 
 
 @_op(casdoor_write)
@@ -323,8 +351,10 @@ def create_group(owner: str, name: str, displayName: str = "", **kwargs):
 @_op(casdoor_write)
 def update_group(owner: str, name: str, **kwargs):
     """Update a group. Pass owner+name to identify, plus fields to change."""
-    body = {"owner": owner, "name": name, **kwargs}
-    return _ok(_get_client().post("/api/update-group", json=body))
+    target = {"id": f"{owner}/{name}"}
+    current = _data(_get_client().get("/api/get-group", params=target))
+    body = {**_merged(current, kwargs, target), "owner": owner, "name": name}
+    return _ok(_get_client().post("/api/update-group", params=target, json=body))
 
 
 # -- casdoor_delete -----------------------------------------------------------
@@ -366,15 +396,28 @@ def delete_permission(owner: str, name: str):
 
 
 @_op(casdoor_delete)
-def delete_token(owner: str, name: str):
-    """Delete a token. Irreversible."""
-    return _ok(_get_client().post("/api/delete-token", json={"owner": owner, "name": name}))
+def delete_token(owner: str, name: str, organization: str):
+    """Delete a token. Irreversible.
+
+    organization is the token's own `organization` field, as listed by
+    ListTokens. Casdoor filters the delete by it; without it the query matches
+    no row and returns 200 with "Unaffected".
+    """
+    body = {"owner": owner, "name": name, "organization": organization}
+    return _ok(_get_client().post("/api/delete-token", json=body))
 
 
 @_op(casdoor_delete)
-def delete_session(owner: str, name: str):
-    """Delete a session. Irreversible."""
-    return _ok(_get_client().post("/api/delete-session", json={"owner": owner, "name": name}))
+def delete_session(owner: str, name: str, application: str):
+    """Delete a session. Irreversible.
+
+    application is the session's own `application` field, as listed by ListSessions.
+    Casdoor keys session rows by owner/name/application: omitting it still matches
+    a row and destroys that user's signed-in sessions, yet deletes no row and
+    answers 200, because the lookup skips the empty field but the delete does not.
+    """
+    body = {"owner": owner, "name": name, "application": application}
+    return _ok(_get_client().post("/api/delete-session", json=body))
 
 
 @_op(casdoor_delete)
