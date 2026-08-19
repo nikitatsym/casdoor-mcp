@@ -72,18 +72,18 @@ def _slim_list(items, fields: set) -> list:
 casdoor_read = Group(
     "casdoor_read",
     "Query Casdoor data (safe, read-only).\n\n"
-    "Call with operation=\"help\" to list all available read operations.\n"
+    "Call with operation=\"$help\" to list all available read operations.\n"
     "Otherwise pass the operation name and a JSON object with parameters.\n\n"
-    "Example: casdoor_read(operation=\"ListUsers\", "
+    "Example: casdoor_read(operation=\"$ListUsers\", "
     "params={\"owner\": \"built-in\"})",
 )
 
 casdoor_write = Group(
     "casdoor_write",
     "Create or update Casdoor resources (non-destructive).\n\n"
-    "Call with operation=\"help\" to list all available write operations.\n"
+    "Call with operation=\"$help\" to list all available write operations.\n"
     "Otherwise pass the operation name and a JSON object with parameters.\n\n"
-    "Example: casdoor_write(operation=\"CreateUser\", "
+    "Example: casdoor_write(operation=\"$CreateUser\", "
     "params={\"owner\": \"built-in\", \"name\": \"alice\", "
     "\"displayName\": \"Alice\"})",
 )
@@ -91,9 +91,9 @@ casdoor_write = Group(
 casdoor_delete = Group(
     "casdoor_delete",
     "Delete Casdoor resources (destructive, irreversible).\n\n"
-    "Call with operation=\"help\" to list all available delete operations.\n"
+    "Call with operation=\"$help\" to list all available delete operations.\n"
     "Otherwise pass the operation name and a JSON object with parameters.\n\n"
-    "Example: casdoor_delete(operation=\"DeleteUser\", "
+    "Example: casdoor_delete(operation=\"$DeleteUser\", "
     "params={\"owner\": \"built-in\", \"name\": \"alice\"})",
 )
 
