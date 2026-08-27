@@ -105,6 +105,32 @@ def test_dispatch_help():
     assert "ListOrganizations" in help_text
 
 
+def test_help_spells_variadic_params_as_kwargs():
+    """Help is the only signature a caller sees, so it must not advertise the
+    VAR_KEYWORD name as a passable parameter: extras reach Casdoor as top-level
+    body fields, and a caller taking `kwargs` literally sends one junk `kwargs`
+    field instead of the fields it meant to set."""
+    from casdoor_mcp import server
+
+    variadic = 0
+    for group_name, ops in server._group_ops.items():
+        help_text = server._build_help(group_name)
+        for pascal_name, fn in ops.items():
+            names = inspect.signature(fn).parameters
+            rendered = next(
+                line for line in help_text.splitlines() if line.startswith(f"  {pascal_name}(")
+            )
+            params = rendered.split("(", 1)[1].split(")", 1)[0].split(", ")
+            for name, param in names.items():
+                if param.kind is inspect.Parameter.VAR_KEYWORD:
+                    variadic += 1
+                    assert f"**{name}" in params, f"{pascal_name} advertises a bare {name}"
+                else:
+                    assert name in params, f"{pascal_name} help dropped {name}"
+
+    assert variadic == 14, "every variadic write must be represented in help"
+
+
 def test_group_docs_resolve_operation_placeholders():
     from casdoor_mcp import server, tools
     from casdoor_mcp.registry import Group

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import httpx
 import pytest
 
@@ -47,6 +49,27 @@ def test_registered_tool_returns_missing_parameter_error():
     result = _registered("casdoor_read")("ListUsers", {})
 
     assert result["error"] == "Missing required parameters: ['owner']"
+
+
+def test_registered_tool_rejects_unknown_parameters():
+    result = _registered("casdoor_read")(
+        "ListUsers", {"owner": "built-in", "unexpected": "value"}
+    )
+
+    assert result == {"error": "Invalid parameters: ['unexpected']"}
+
+
+def test_coerce_call_preserves_defaults_and_named_coercion():
+    def operation(
+        enabled: bool = False, scope: Literal["all", "active"] = "all"
+    ) -> tuple[bool, str]:
+        return enabled, scope
+
+    assert server._coerce_call(operation, {}) == (False, "all")
+    assert server._coerce_call(operation, {"enabled": "yes", "scope": "active"}) == (
+        True,
+        "active",
+    )
 
 
 def test_registration_keeps_tools_sync():

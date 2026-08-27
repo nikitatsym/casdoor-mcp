@@ -119,18 +119,29 @@ def _coerce_call(fn, params: dict):
     """Coerce JSON-parsed params to match function signature, then call fn."""
     sig = inspect.signature(fn)
     hints = typing.get_type_hints(fn)
-    missing = [
-        name
+    named_params = {
+        name: param
         for name, param in sig.parameters.items()
         if param.kind
         not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        and param.default is inspect.Parameter.empty
-        and name not in params
+    }
+    accepts_extra_params = any(
+        param.kind is inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()
+    )
+    missing = [
+        name
+        for name, param in named_params.items()
+        if param.default is inspect.Parameter.empty and name not in params
     ]
     if missing:
         raise ValueError(f"Missing required parameters: {missing}")
+
+    extra_params = {name: value for name, value in params.items() if name not in named_params}
+    if extra_params and not accepts_extra_params:
+        raise ValueError(f"Invalid parameters: {sorted(extra_params)}")
+
     kwargs = {}
-    for name, param in sig.parameters.items():
+    for name, param in named_params.items():
         if name not in params:
             continue
         val = params[name]
@@ -141,6 +152,7 @@ def _coerce_call(fn, params: dict):
                 default = False
             val = _parse_bool(val, default)
         kwargs[name] = val
+    kwargs.update(extra_params)
     return fn(**kwargs)
 
 
@@ -151,12 +163,22 @@ _all_grouped: dict[str, str] = {}   # {PascalName: group_name}
 
 
 def _build_help(group_name: str) -> str:
-    """Build help text from operation functions in a group."""
+    """Build help text from operation functions in a group.
+
+    A VAR_KEYWORD parameter is rendered as `**kwargs`, never as a plain name:
+    extras reach Casdoor as top-level body fields, so a caller that reads
+    `kwargs` as a parameter name sends a body carrying one literal `kwargs`
+    field -- which Casdoor ignores -- while every field it meant to set is
+    missing. This help text is the only signature a caller sees at call time,
+    so it has to spell the wire contract the way SPEC.md does.
+    """
     ops = _group_ops[group_name]
     lines = []
     for pascal_name, fn in ops.items():
-        sig = inspect.signature(fn)
-        params = ", ".join(sig.parameters.keys())
+        params = ", ".join(
+            f"**{name}" if param.kind is inspect.Parameter.VAR_KEYWORD else name
+            for name, param in inspect.signature(fn).parameters.items()
+        )
         doc = fn.__doc__.split("\n")[0]
         lines.append(f"  {pascal_name}({params}) -- {doc}")
     return f"{len(lines)} operations available:\n" + "\n".join(lines)

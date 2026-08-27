@@ -17,13 +17,14 @@ These pin the wire shape directly instead, driving the real ops through a
 
 from __future__ import annotations
 
+import inspect
 import json
 from typing import Any
 
 import httpx
 import pytest
 
-from casdoor_mcp import client, tools
+from casdoor_mcp import client, server, tools
 from casdoor_mcp.client import APIError
 from casdoor_mcp.config import _reset_settings
 
@@ -36,6 +37,25 @@ UPDATE_OPS = {
     "update_role": ("/api/get-role", "/api/update-role"),
     "update_permission": ("/api/get-permission", "/api/update-permission"),
     "update_group": ("/api/get-group", "/api/update-group"),
+}
+
+# Public write operations that accept arbitrary Casdoor JSON fields through
+# their ``**kwargs`` signature, mapped to their final POST endpoint.
+VARIADIC_WRITE_OPS = {
+    "CreateUser": "/api/add-user",
+    "UpdateUser": "/api/update-user",
+    "CreateOrganization": "/api/add-organization",
+    "UpdateOrganization": "/api/update-organization",
+    "CreateApplication": "/api/add-application",
+    "UpdateApplication": "/api/update-application",
+    "CreateProvider": "/api/add-provider",
+    "UpdateProvider": "/api/update-provider",
+    "CreateRole": "/api/add-role",
+    "UpdateRole": "/api/update-role",
+    "CreatePermission": "/api/add-permission",
+    "UpdatePermission": "/api/update-permission",
+    "CreateGroup": "/api/add-group",
+    "UpdateGroup": "/api/update-group",
 }
 
 
@@ -140,3 +160,41 @@ def test_delete_token_sends_the_organization(wire: _Wire) -> None:
 
     body = wire.body(wire.sent("POST", "/api/delete-token"))
     assert body == {"owner": "admin", "name": "token-1", "organization": "built-in"}
+
+
+def _registered_write():
+    return server.mcp._tool_manager._tools["casdoor_write"].fn
+
+
+def test_variadic_write_operations_match_the_public_contract() -> None:
+    """Every variadic write is covered by the JSON-field forwarding contract."""
+    actual = {
+        name
+        for name, fn in server._group_ops["casdoor_write"].items()
+        if any(
+            param.kind is inspect.Parameter.VAR_KEYWORD
+            for param in inspect.signature(fn).parameters.values()
+        )
+    }
+
+    assert actual == set(VARIADIC_WRITE_OPS)
+
+
+@pytest.mark.parametrize("operation, post_path", sorted(VARIADIC_WRITE_OPS.items()))
+def test_variadic_write_forwards_extra_params_to_the_json_body(
+    wire: _Wire, operation: str, post_path: str
+) -> None:
+    """Dispatch, not direct Python calls, must put extra fields on every body."""
+    _registered_write()(
+        operation,
+        {
+            "owner": "built-in",
+            "name": "alice",
+            "futureCasdoorField": {"enabled": True},
+            "kwargs": "literal JSON field",
+        },
+    )
+
+    body = wire.body(wire.sent("POST", post_path))
+    assert body["futureCasdoorField"] == {"enabled": True}
+    assert body["kwargs"] == "literal JSON field"

@@ -49,34 +49,34 @@ Format: `function_name(params)` → `HTTP_METHOD /path` — description.
 
 | Operation | Endpoint | Notes |
 |---|---|---|
-| `create_user(user)` | `POST /api/add-user` | body = user object |
+| `create_user(owner, name, displayName="", **kwargs)` | `POST /api/add-user` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_user(owner, name, **kwargs)` | `GET /api/get-user?id=owner/name` then `POST /api/update-user?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_organization(org)` | `POST /api/add-organization` | body = org object |
+| `create_organization(owner, name, displayName="", **kwargs)` | `POST /api/add-organization` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_organization(owner, name, **kwargs)` | `GET /api/get-organization?id=owner/name` then `POST /api/update-organization?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_application(app)` | `POST /api/add-application` | |
+| `create_application(owner, name, displayName="", **kwargs)` | `POST /api/add-application` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_application(owner, name, **kwargs)` | `GET /api/get-application?id=owner/name` then `POST /api/update-application?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_provider(provider)` | `POST /api/add-provider` | |
+| `create_provider(owner, name, displayName="", **kwargs)` | `POST /api/add-provider` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_provider(owner, name, **kwargs)` | `GET /api/get-provider?id=owner/name` then `POST /api/update-provider?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_role(role)` | `POST /api/add-role` | |
+| `create_role(owner, name, displayName="", **kwargs)` | `POST /api/add-role` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_role(owner, name, **kwargs)` | `GET /api/get-role?id=owner/name` then `POST /api/update-role?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_permission(perm)` | `POST /api/add-permission` | |
+| `create_permission(owner, name, displayName="", **kwargs)` | `POST /api/add-permission` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_permission(owner, name, **kwargs)` | `GET /api/get-permission?id=owner/name` then `POST /api/update-permission?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
-| `create_group(group)` | `POST /api/add-group` | |
+| `create_group(owner, name, displayName="", **kwargs)` | `POST /api/add-group` | body includes owner, name, displayName, and caller-supplied Casdoor fields |
 | `update_group(owner, name, **kwargs)` | `GET /api/get-group?id=owner/name` then `POST /api/update-group?id=owner/name` | read-modify-write: Casdoor rewrites every column, so kwargs are laid over the current object |
 
 ### casdoor_delete
 
 | Operation | Endpoint | Notes |
 |---|---|---|
-| `delete_user(user)` | `POST /api/delete-user` | body = user object |
-| `delete_organization(org)` | `POST /api/delete-organization` | |
-| `delete_application(app)` | `POST /api/delete-application` | |
-| `delete_provider(provider)` | `POST /api/delete-provider` | |
-| `delete_role(role)` | `POST /api/delete-role` | |
-| `delete_permission(perm)` | `POST /api/delete-permission` | |
+| `delete_user(owner, name)` | `POST /api/delete-user` | body = owner + name |
+| `delete_organization(owner, name)` | `POST /api/delete-organization` | body = owner + name |
+| `delete_application(owner, name)` | `POST /api/delete-application` | body = owner + name |
+| `delete_provider(owner, name)` | `POST /api/delete-provider` | body = owner + name |
+| `delete_role(owner, name)` | `POST /api/delete-role` | body = owner + name |
+| `delete_permission(owner, name)` | `POST /api/delete-permission` | body = owner + name |
 | `delete_token(owner, name, organization)` | `POST /api/delete-token` | body = owner + name + organization; Casdoor filters the delete by organization |
 | `delete_session(owner, name, application)` | `POST /api/delete-session` | body = owner + name + application; Casdoor keys sessions by all three |
-| `delete_group(group)` | `POST /api/delete-group` | |
+| `delete_group(owner, name)` | `POST /api/delete-group` | body = owner + name |
 
 ## Slim fields
 
