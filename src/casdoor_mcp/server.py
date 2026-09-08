@@ -8,7 +8,9 @@ from functools import wraps
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
-from mcp.server.mcpserver import MCPServer
+import pydantic_core
+from mcp.server.mcpserver import Image, MCPServer
+from mcp.types import ContentBlock, TextContent
 
 from . import tools as _tools_module
 from .client import APIError
@@ -87,6 +89,33 @@ def _safe_tool(fn):
             return _error_result(exc)
 
     return wrapped
+
+
+def _compact(fn):
+    """Serialize a data result as one-line JSON.
+
+    The SDK pretty-prints non-string results (`indent=2`), which costs the
+    caller ~20% more tokens for nothing; a ready TextContent passes through
+    untouched. Strings, content blocks and images keep the SDK path. Mirrors
+    fn's sync/async flavor so a sync tool stays on the SDK worker thread.
+    """
+    def to_content(result):
+        if result is None or isinstance(result, str | ContentBlock | Image):
+            return result
+        return TextContent(
+            type="text", text=pydantic_core.to_json(result, fallback=str).decode()
+        )
+
+    if inspect.iscoroutinefunction(fn):
+        @wraps(fn)
+        async def async_compact(*args, **kwargs):
+            return to_content(await fn(*args, **kwargs))
+        return async_compact
+
+    @wraps(fn)
+    def sync_compact(*args, **kwargs):
+        return to_content(fn(*args, **kwargs))
+    return sync_compact
 
 
 # -- Helpers ------------------------------------------------------------------
@@ -240,7 +269,7 @@ def _register_tools():
             continue
         group = fn._mcp_group
         if group is ROOT:
-            mcp.tool()(_safe_tool(fn))
+            mcp.tool(structured_output=False)(_compact(_safe_tool(fn)))
         else:
             if group.name not in groups:
                 groups[group.name] = (group, {})
@@ -265,7 +294,7 @@ def _register_tools():
             tool_fn.__doc__ = gdoc
             return tool_fn
 
-        mcp.tool()(_safe_tool(_make_tool(group_name, doc)))
+        mcp.tool(structured_output=False)(_compact(_safe_tool(_make_tool(group_name, doc))))
 
 
 _register_tools()
