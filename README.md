@@ -65,6 +65,10 @@ Where to get: User account settings or `update-user` API (per-user credentials).
 }
 ```
 
+### HTTP
+
+`casdoor-mcp --http` serves streamable HTTP at `http://127.0.0.1:8000/mcp` (`--host`, `--port`) instead of stdio, same environment variables. No authentication: put a gateway in front.
+
 ## Groups
 
 | Tool | Description |
