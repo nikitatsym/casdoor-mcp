@@ -1,13 +1,18 @@
+from contextvars import ContextVar
+
 from .client import APIError, CasdoorClient
 from .registry import ROOT, Group, _op
 
-# -- Client singleton ---------------------------------------------------------
+# -- Client: request-scoped, module singleton as fallback ---------------------
 
+client_var: ContextVar[CasdoorClient | None] = ContextVar("casdoor_client", default=None)
 _client: CasdoorClient | None = None
 
 
 def _get_client() -> CasdoorClient:
     global _client
+    if (bound := client_var.get()) is not None:
+        return bound
     if _client is None:
         _client = CasdoorClient()
     return _client

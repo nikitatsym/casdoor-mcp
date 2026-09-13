@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from casdoor_mcp import tools
 from casdoor_mcp.config import _reset_settings
 from casdoor_mcp.tools import (
     _SLIM_APPLICATION_FIELDS,
@@ -94,6 +95,18 @@ def test_auth_priority_access_key(monkeypatch):
         call_kwargs = mock_client.call_args
         assert call_kwargs.kwargs["params"] == {"accessKey": "akey", "accessSecret": "asecret"}
         assert "Authorization" not in call_kwargs.kwargs["headers"]
+
+
+def test_client_var_overrides_singleton(monkeypatch):
+    """A host serving several Casdoor instances binds one client per request."""
+    monkeypatch.setattr(tools, "_client", object())
+    bound = object()
+    token = tools.client_var.set(bound)
+    try:
+        assert tools._get_client() is bound
+    finally:
+        tools.client_var.reset(token)
+    assert tools._get_client() is tools._client
 
 
 def test_dispatch_help():

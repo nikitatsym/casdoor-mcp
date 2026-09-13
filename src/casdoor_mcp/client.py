@@ -1,6 +1,6 @@
 import httpx
 
-from .config import get_settings
+from .config import Settings, get_settings
 
 
 class APIError(Exception):
@@ -21,8 +21,10 @@ class CasdoorClient:
         access_token: str | None = None,
         access_key: str | None = None,
         access_secret: str | None = None,
+        *,
+        settings: Settings | None = None,
     ):
-        s = get_settings()
+        s = settings or get_settings()
         self._base = (base_url or s.casdoor_endpoint).rstrip("/")
         token = access_token or s.casdoor_access_token
         cid = client_id or s.casdoor_client_id
