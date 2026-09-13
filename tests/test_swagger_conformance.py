@@ -59,7 +59,11 @@ _SPEC_PATH = Path(__file__).parent / "casdoor-swagger.json"
 
 # Ops whose call shape the extractor below cannot read. ONLY code shapes belong
 # here - never a name mismatch, which is the whole point of this test.
-UNANALYZABLE_OK: dict[str, str] = {}
+UNANALYZABLE_OK: dict[str, str] = {
+    # The version tool calls the client's check(), which carries its own path;
+    # that path is GET /api/get-organizations, checked here as list_organizations.
+    "casdoor_version": "calls _get_client().check(), whose path is not in this op",
+}
 
 # Ops with no wire call of their own: they only drive other registered ops,
 # whose calls are checked in their own right.

@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from casdoor_mcp import tools
+from casdoor_mcp.client import CasdoorClient
 from casdoor_mcp.config import _reset_settings
 from casdoor_mcp.tools import (
     _SLIM_APPLICATION_FIELDS,
@@ -95,6 +96,24 @@ def test_auth_priority_access_key(monkeypatch):
         call_kwargs = mock_client.call_args
         assert call_kwargs.kwargs["params"] == {"accessKey": "akey", "accessSecret": "asecret"}
         assert "Authorization" not in call_kwargs.kwargs["headers"]
+
+
+def test_check_names_the_settings_when_no_credential_is_configured(monkeypatch):
+    """An unconfigured server must say which setting is missing at startup,
+    rather than send an unauthenticated request Casdoor answers with 200."""
+    for var in (
+        "CASDOOR_ENDPOINT",
+        "CASDOOR_CLIENT_ID",
+        "CASDOOR_CLIENT_SECRET",
+        "CASDOOR_ACCESS_TOKEN",
+        "CASDOOR_ACCESS_KEY",
+        "CASDOOR_ACCESS_SECRET",
+    ):
+        monkeypatch.delenv(var, raising=False)
+    _reset_settings()
+
+    with pytest.raises(ValueError, match="CASDOOR_ENDPOINT"):
+        CasdoorClient().check()
 
 
 def test_client_var_overrides_singleton(monkeypatch):

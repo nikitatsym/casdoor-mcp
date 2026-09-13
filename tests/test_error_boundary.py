@@ -8,7 +8,7 @@ import httpx
 import pytest
 from mcp.types import TextContent
 
-from casdoor_mcp import server, tools
+from casdoor_mcp import client, server, tools
 from casdoor_mcp.client import APIError
 
 
@@ -44,14 +44,16 @@ def test_registered_tools_return_compact_json_without_structured_content():
 
 def test_registered_root_returns_contextual_api_error(monkeypatch):
     class BrokenClient:
-        def get(self, _path: str):
-            raise APIError(503, "GET", "/api/health?token=secret", {"detail": "unavailable"})
+        def check(self):
+            raise APIError(
+                503, "GET", "/api/get-organizations?token=secret", {"detail": "unavailable"}
+            )
 
     monkeypatch.setattr(tools, "_get_client", lambda: BrokenClient())
 
     result = _registered("casdoor_version")()
 
-    assert result["error"].startswith("GET /api/health -> 503")
+    assert result["error"].startswith("GET /api/get-organizations -> 503")
     assert "secret" not in result["error"]
 
 
@@ -105,7 +107,7 @@ def test_registration_keeps_tools_sync():
 
 def test_registered_root_preserves_success_shape(monkeypatch):
     class OkClient:
-        def get(self, _path: str):
+        def check(self):
             return {"status": "ok"}
 
     monkeypatch.setattr(tools, "_get_client", lambda: OkClient())
@@ -114,6 +116,24 @@ def test_registered_root_preserves_success_shape(monkeypatch):
 
     assert result["service"] == {"status": "ok"}
     assert "mcp" in result
+
+
+def test_check_reports_casdoors_in_body_error(monkeypatch):
+    """Casdoor answers an unauthorized request with HTTP 200 and a
+    `status: "error"` body, so a check that trusts the status code alone would
+    let the server start on a credential that works for nothing."""
+    real_client = httpx.Client
+    denied = httpx.MockTransport(
+        lambda _request: httpx.Response(
+            200, json={"status": "error", "msg": "Unauthorized operation"}
+        )
+    )
+    monkeypatch.setattr(
+        client.httpx, "Client", lambda **kwargs: real_client(transport=denied, **kwargs)
+    )
+
+    with pytest.raises(APIError, match="Unauthorized operation"):
+        client.CasdoorClient(base_url="https://casdoor.example", access_token="bad").check()
 
 
 def test_registered_tool_propagates_programming_error(monkeypatch):

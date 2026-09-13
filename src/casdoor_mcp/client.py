@@ -41,6 +41,7 @@ class CasdoorClient:
             auth_params = {"clientId": cid, "clientSecret": csecret}
         elif akey and asecret:
             auth_params = {"accessKey": akey, "accessSecret": asecret}
+        self._has_credential = bool(headers or auth_params)
 
         self._http = httpx.Client(
             base_url=self._base,
@@ -66,3 +67,23 @@ class CasdoorClient:
 
     def post(self, path: str, **kwargs):
         return self._handle(self._http.post(path, **kwargs))
+
+    def check(self) -> dict:
+        """One authenticated read, so a bad credential fails at startup.
+
+        Casdoor answers an unauthorized request with HTTP 200 and a
+        `status: "error"` body -- upstream leaves the 403 commented out in
+        routers/base.go -- so the body, not the status code, is what reports a
+        bad credential.
+        """
+        if not self._base or not self._has_credential:
+            raise ValueError(
+                "CASDOOR_ENDPOINT and one of CASDOOR_ACCESS_TOKEN, "
+                "CASDOOR_CLIENT_ID + CASDOOR_CLIENT_SECRET, "
+                "CASDOOR_ACCESS_KEY + CASDOOR_ACCESS_SECRET must be set"
+            )
+        path = "/api/get-organizations"
+        resp = self.get(path)
+        if isinstance(resp, dict) and resp.get("status") == "error":
+            raise APIError(200, "GET", path, resp.get("msg") or resp)
+        return {"status": "ok"}

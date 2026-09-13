@@ -111,7 +111,7 @@ def casdoor_version():
     from importlib.metadata import version
     return {
         "mcp": version("casdoor-mcp"),
-        "service": _get_client().get("/api/health"),
+        "service": _get_client().check(),
     }
 
 
